@@ -51,6 +51,9 @@ struct SimpleStencil : Kernel {
   int y_size = 0;
   int *out_buf, *in_buf;
 
+  // Debugging code
+  int *thread_idx;
+
   void kernel() {
     const int x = blockIdx.x * blockDim.x + threadIdx.x;
     const int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -61,6 +64,9 @@ struct SimpleStencil : Kernel {
     if (x > 0)          out_buf[ind] += in_buf[y * y_size + x - 1];
     if (y < y_size - 1) out_buf[ind] += in_buf[(y + 1) * y_size + x];
     if (y > 0)          out_buf[ind] += in_buf[(y - 1) * y_size + x];
+
+    // Debugging code
+    thread_idx[ind] = ind;
   }
 };
 
@@ -80,6 +86,9 @@ int main() {
   simt_aligned int in_buf[buf_size];
   simt_aligned int out_buf[buf_size];
   int golden_out_buf[buf_size];
+  
+  // Debugging code
+  simt_aligned int thread_idx[buf_size];
 
   // Prepare buffers
   // Zero out the ouput buffers
@@ -102,7 +111,8 @@ int main() {
   k.x_size     = buf_size_x;
   k.y_size     = buf_size_y;
   k.out_buf    = out_buf;
-  k.in_buf     = in_buf;
+  k.in_buf    = in_buf;
+  k.thread_idx = thread_idx;
   if (DEBUG) puts("Kernel running... ");
   noclRunKernelAndDumpStats(&k);
   if (DEBUG) puts("Done\n");
@@ -112,6 +122,16 @@ int main() {
   puts("Self test: ");
   puts(ok ? "PASSED" : "FAILED");
   putchar('\n');
+
+  // Debugging code
+  // Check thread ids
+  for (int i = 0; i < buf_size; ++i) {
+    if (thread_idx[i] != i) {
+      puts("Encountered a wrong thread ID at index: "); puthex(i); putchar('\n');
+      puts("Expected: "); puthex(i); putchar('\n');
+      puts("Actual:   "); puthex(thread_idx[i]); putchar('\n');
+    }
+  }
 
   return 0;
 }
