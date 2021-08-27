@@ -57,11 +57,32 @@ struct SimpleStencil : Kernel {
     const int y = blockIdx.y * blockDim.y + threadIdx.y;
     const int ind = y * y_size + x;
 
+    // Load values into local memory
+    auto c = shared.array<int, SIMTLanes, SIMTWarps>();
+    c[threadIdx.x][threadIdx.y] = in_buf[ind];
+    __syncthreads();
+
     int result = in_buf[ind];
-    if (x < x_size - 1) result += in_buf[y * y_size + x + 1];
+    /*if (x < x_size - 1) result += in_buf[y * y_size + x + 1];
     if (x > 0)          result += in_buf[y * y_size + x - 1];
     if (y < y_size - 1) result += in_buf[(y + 1) * y_size + x];
-    if (y > 0)          result += in_buf[(y - 1) * y_size + x];
+    if (y > 0)          result += in_buf[(y - 1) * y_size + x];*/
+    if (x < x_size - 1) {
+      if (threadIdx.x == blockDim.x - 1) result += in_buf[ind + 1];
+      else result += c[threadIdx.x + 1][threadIdx.y]; // in_buf[y * y_size + x + 1];
+    }
+    if (x > 0) {
+      if (threadIdx.x == 0) result += in_buf[ind - 1];
+      else result += c[threadIdx.x - 1][threadIdx.y]; //in_buf[y * y_size + x - 1];
+    }
+    if (y < y_size - 1) {
+      if (threadIdx.y == blockDim.y - 1) result += in_buf[(y + 1) * y_size + x];
+      else result += c[threadIdx.x][threadIdx.y + 1]; // in_buf[(y + 1) * y_size + x];
+    }
+    if (y > 0) {
+      if (threadIdx.y == 0) result += in_buf[(y - 1) * y_size + x];
+      else result += c[threadIdx.x][threadIdx.y - 1]; // in_buf[(y - 1) * y_size + x];
+    }
     out_buf[ind] = result;
 
     // Code that generates wrong results sometimes.
