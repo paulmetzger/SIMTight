@@ -77,8 +77,8 @@ int main() {
   bool isSim = getchar();
 
   // Vector size for benchmarking
-  int buf_size_x = 512;
-  int buf_size_y = 512;
+  int buf_size_x = 1024;
+  int buf_size_y = 1024;
   if (isSim) {
     buf_size_x = 64;
     buf_size_y = 64;
