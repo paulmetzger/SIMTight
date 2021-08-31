@@ -10,3 +10,5 @@ clean:
 	make -C Scan clean
 	make -C MatVecMul clean
 	make -C MatMul clean
+	make -C StencilFast clean
+	make -C StencilFast2 clean
