@@ -71,13 +71,15 @@ struct SimpleStencil : Kernel {
     int x          = threadIdx.x;
     const int y    = blockIdx.y * blockDim.y + threadIdx.y;
     int global_ind = y * y_size + x;
-
+    
+    // This is SIMTLanes * 4 instead of * 3 so that we can replace modulo operations
+    // with bitmasks.
     const int shared_mem_x_size = SIMTLanes * 4;
     auto c = shared.array<int, shared_mem_x_size, SIMTWarps>();
     for (int i = 0; i < x_size; i += SIMTLanes) {
       // Load values into local memory
       c[threadIdx.y][MOD_4XSIMTLANES(x)] = in_buf[global_ind];
-      if (i + SIMTLanes < x_size) c[threadIdx.y][MOD_4XSIMTLANES(x + SIMTLanes)] = in_buf[global_ind + SIMTLanes];
+      if (likely(i + SIMTLanes < x_size)) c[threadIdx.y][MOD_4XSIMTLANES(x + SIMTLanes)] = in_buf[global_ind + SIMTLanes];
       noclConverge();
       __syncthreads();
 
