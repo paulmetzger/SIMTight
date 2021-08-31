@@ -9,6 +9,7 @@
 #include <NoCL.h>
 
 #define DEBUG false
+#define MOD_4XSIMTLANES(ind) (ind & 11111111)
 
 void populate_in_buf(int *in_buf, int x_size, int y_size) {
   for (int y = 0; y < y_size; ++y) {
@@ -69,31 +70,31 @@ struct SimpleStencil : Kernel {
     const int y    = blockIdx.y * blockDim.y + threadIdx.y;
     int global_ind = y * y_size + x;
 
-    const int shared_mem_x_size = SIMTLanes * 3;
+    const int shared_mem_x_size = SIMTLanes * 4;
     auto c = shared.array<int, shared_mem_x_size, SIMTWarps>();
     for (int i = 0; i < x_size; i += SIMTLanes) {
       // Load values into local memory
-      c[threadIdx.y][x % shared_mem_x_size] = in_buf[global_ind];
-      if (i + SIMTLanes < x_size) c[threadIdx.y][(x + SIMTLanes) % shared_mem_x_size] = in_buf[global_ind];
+      c[threadIdx.y][MOD_4XSIMTLANES(x)] = in_buf[global_ind];
+      if (i + SIMTLanes < x_size) c[threadIdx.y][MOD_4XSIMTLANES(x + SIMTLanes)] = in_buf[global_ind + SIMTLanes];
       noclConverge();
       __syncthreads();
 
       int result = in_buf[global_ind];
-      if (x < x_size - 1) result += c[threadIdx.y][(x + 1) % shared_mem_x_size];
+      if (x < x_size - 1) result += c[threadIdx.y][MOD_4XSIMTLANES(x + 1)];
       noclConverge();
 
-      if (x > 0)          result += c[threadIdx.y][(x - 1) % shared_mem_x_size];
+      if (x > 0)          result += c[threadIdx.y][MOD_4XSIMTLANES(x - 1)];
       noclConverge();
 
       if (y < y_size - 1) {
         if (threadIdx.y == blockDim.y - 1) result += in_buf[(y + 1) * y_size + x];
-        else result += c[threadIdx.y + 1][x % shared_mem_x_size]; // in_buf[(y + 1) * y_size + x];
+        else result += c[threadIdx.y + 1][MOD_4XSIMTLANES(x)]; // in_buf[(y + 1) * y_size + x];
       }
       noclConverge();
 
       if (y > 0) {
         if (threadIdx.y == 0) result += in_buf[(y - 1) * y_size + x];
-        else result += c[threadIdx.y - 1][x % shared_mem_x_size]; // in_buf[(y - 1) * y_size + x];
+        else result += c[threadIdx.y - 1][MOD_4XSIMTLANES(x)]; // in_buf[(y - 1) * y_size + x];
       }
       noclConverge();
 
