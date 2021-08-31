@@ -81,7 +81,7 @@ struct SimpleStencil : Kernel {
       __syncthreads();
       
       // Actual stencil computation
-      int result = in_buf[global_ind];
+      int result = c[threadIdx.y][MOD_4XSIMTLANES(x)];
       if (likely(x < x_size - 1)) result += c[threadIdx.y][MOD_4XSIMTLANES(x + 1)];
       noclConverge();
 
