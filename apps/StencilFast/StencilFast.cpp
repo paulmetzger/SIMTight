@@ -110,10 +110,10 @@ int main() {
 
   // Prepare buffers
   // Zero out the ouput buffers
-  /*for (int i = 0; i < buf_size; ++i) {
+  for (int i = 0; i < buf_size; ++i) {
     out_buf[i] = 0;
-    golden_out_buf[i] = 0;
-  }*/
+    //golden_out_buf[i] = 0;
+  }
   populate_in_buf(in_buf, buf_size_x, buf_size_y);
   
   // Generate the golden output to check if

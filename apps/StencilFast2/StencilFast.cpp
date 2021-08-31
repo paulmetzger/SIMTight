@@ -11,7 +11,7 @@
 #include <NoCL.h>
 
 #define DEBUG false
-#define MOD_4XSIMTLANES(ind) (ind & 0x7F)
+#define MOD_4XSIMTLANES(ind) (ind & 0x7F) // Mod 128
 //#define likely(expr) __builtin_expect(expr, true)
 //#define unlikely(expr) __builtin_expect(expr, false)
 #define likely(expr) (expr)
@@ -129,7 +129,7 @@ int main() {
   // Prepare buffers
   // Zero out the ouput buffers
   for (int i = 0; i < buf_size; ++i) {
-    //out_buf[i] = 0;
+    out_buf[i] = 0;
     //golden_out_buf[i] = 0;
   }
   populate_in_buf(in_buf, buf_size_x, buf_size_y);
