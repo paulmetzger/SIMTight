@@ -11,7 +11,7 @@
 #include <NoCL.h>
 
 #define DEBUG false
-#define MOD_4XSIMTLANES(ind) (ind & 1111111)
+#define MOD_4XSIMTLANES(ind) (ind & 0x7F)
 //#define likely(expr) __builtin_expect(expr, true)
 //#define unlikely(expr) __builtin_expect(expr, false)
 #define likely(expr) (expr)
@@ -20,7 +20,7 @@
 void populate_in_buf(int *in_buf, int x_size, int y_size) {
   for (int y = 0; y < y_size; ++y) {
     for (int x = 0; x < x_size; ++x)
-      in_buf[y * y_size + x] = 1;
+      in_buf[y * y_size + x] = x * y;
   }
 }
 
@@ -32,14 +32,10 @@ void generate_golden_output(int *in_buf, int *golden_out, int x_size, int y_size
       const int ind = y * y_size + x;
 
       int result = in_buf[ind];
-      if (x < x_size - 1)
-        result += in_buf[y * y_size + x + 1];
-      if (x > 0)
-        result += in_buf[y * y_size + x - 1];
-      if (y < y_size - 1)
-        result += in_buf[(y + 1) * y_size + x];
-      if (y > 0)
-        result += in_buf[(y - 1) * y_size + x];
+      if (x < x_size - 1) result += in_buf[y * y_size + x + 1];
+      if (x > 0) result += in_buf[y * y_size + x - 1];
+      if (y < y_size - 1) result += in_buf[(y + 1) * y_size + x];
+      if (y > 0) result += in_buf[(y - 1) * y_size + x];
       golden_out[ind] = result;
     }
   }
@@ -66,23 +62,23 @@ bool check_output(int *out_buf, int *golden_buf, int buf_size) {
 }
 
 struct SimpleStencil : Kernel {
-  int x_size = 0;
-  int y_size = 0;
+  unsigned x_size = 0;
+  unsigned y_size = 0;
   int *out_buf, *in_buf;
 
   void kernel() {
-    int x          = threadIdx.x;
-    const int y    = blockIdx.y * blockDim.y + threadIdx.y;
-    int global_ind = y * y_size + x;
+    unsigned x          = threadIdx.x;
+    const unsigned y    = blockIdx.y * blockDim.y + threadIdx.y;
+    unsigned global_ind = y * y_size + x;
     
     // This is SIMTLanes * 4 instead of * 3 so that we can replace modulo operations
     // with bitmasks.
-    const int shared_mem_x_size = SIMTLanes * 4;
-    auto c = shared.array<int, shared_mem_x_size, SIMTWarps>();
+    const unsigned shared_mem_x_size = SIMTLanes * 4;
+    auto c = shared.array<int, SIMTWarps, shared_mem_x_size>();
     for (int i = 0; i < x_size; i += SIMTLanes) {
       // Load values into local memory
       c[threadIdx.y][MOD_4XSIMTLANES(x)] = in_buf[global_ind];
-      if (likely(i + SIMTLanes < x_size)) c[threadIdx.y][MOD_4XSIMTLANES(x + SIMTLanes)] = in_buf[global_ind + SIMTLanes];
+      if (likely(i + SIMTLanes < x_size)) c[threadIdx.y][(x + SIMTLanes) % (4 * SIMTLanes)] = in_buf[global_ind + SIMTLanes];
       noclConverge();
       __syncthreads();
       
@@ -133,7 +129,7 @@ int main() {
   // Prepare buffers
   // Zero out the ouput buffers
   for (int i = 0; i < buf_size; ++i) {
-    out_buf[i] = 0;
+    //out_buf[i] = 0;
     //golden_out_buf[i] = 0;
   }
   populate_in_buf(in_buf, buf_size_x, buf_size_y);
@@ -161,6 +157,10 @@ int main() {
   puts("Self test: ");
   puts(ok ? "PASSED" : "FAILED");
   putchar('\n');
+
+  // puts("SIMTLanes: ");
+  // puthex(SIMTLanes);
+  // putchar('\n');
 
   return 0;
 }
