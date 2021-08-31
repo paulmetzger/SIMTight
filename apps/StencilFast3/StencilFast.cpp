@@ -32,9 +32,9 @@ void generate_golden_output(int *in_buf, int *golden_out, int x_size, int y_size
 
       int result = in_buf[ind];
       if (x < x_size - 1) result += in_buf[y * x_size + x + 1];
-      if (x > 0) result += in_buf[y * y_size + x - 1];
+      if (x > 0)          result += in_buf[y * x_size + x - 1];
       if (y < y_size - 1) result += in_buf[(y + 1) * x_size + x];
-      if (y > 0) result += in_buf[(y - 1) * x_size + x];
+      if (y > 0)          result += in_buf[(y - 1) * x_size + x];
       golden_out[ind] = result;
     }
   }
@@ -121,6 +121,9 @@ struct SimpleStencil : Kernel {
 };
 
 int main() {
+  puts("Broken. Needs to be fixed.");
+  return 0;
+
   // Are we in simulation?
   bool isSim = getchar();
 
