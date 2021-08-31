@@ -1,7 +1,7 @@
 /**
  * A simple test stencil computation that computes the sum of each point 
  * and its four direct neighbours in a 2D grid.
- * The implementation is very naive and optimised.
+ * The implementation is very naive and unoptimised.
  *
  * Author: Paul Metzger 
  */
