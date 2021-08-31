@@ -12,7 +12,7 @@
 
 void populate_in_buf(int *in_buf, int x_size, int y_size) {
   for (int y = 0; y < y_size; ++y) {
-    for (int x = 0; x < x_size; ++x) in_buf[y * y_size + x] = 1;
+    for (int x = 0; x < x_size; ++x) in_buf[y * y_size + x] = x * y;
   }
 }
 
@@ -116,7 +116,7 @@ int main() {
   }
   populate_in_buf(in_buf, buf_size_x, buf_size_y);
   
-  // Generate the golden output to check if
+  // Generate a golden output to check if
   // the results computed by the GPU kernel are correct (see below).
   generate_golden_output(in_buf, golden_out_buf, buf_size_x, buf_size_y);
 
