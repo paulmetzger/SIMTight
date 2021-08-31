@@ -1,7 +1,7 @@
 /**
  * A simple test stencil computation that computes the sum of each point 
  * and its four direct neighbours in a 2D grid.
- * The implementation is very naive and optimised.
+ * The implementation accesses memory in an aligned way and uses shared memory.
  *
  * Author: Paul Metzger 
  */
@@ -63,10 +63,6 @@ struct SimpleStencil : Kernel {
     __syncthreads();
 
     int result = in_buf[ind];
-    /*if (x < x_size - 1) result += in_buf[y * y_size + x + 1];
-    if (x > 0)          result += in_buf[y * y_size + x - 1];
-    if (y < y_size - 1) result += in_buf[(y + 1) * y_size + x];
-    if (y > 0)          result += in_buf[(y - 1) * y_size + x];*/
     if (x < x_size - 1) {
       if (threadIdx.x == blockDim.x - 1) result += in_buf[ind + 1];
       else result += c[threadIdx.y][threadIdx.x + 1]; // in_buf[y * y_size + x + 1];
@@ -92,12 +88,6 @@ struct SimpleStencil : Kernel {
     noclConverge();
 
     out_buf[ind] = result;
-
-    // Code that generates wrong results sometimes.
-    //if (x < x_size - 1) out_buf[ind] += in_buf[y * y_size + x + 1];
-    //if (x > 0)          out_buf[ind] += in_buf[y * y_size + x - 1];
-    //if (y < y_size - 1) out_buf[ind] += in_buf[(y + 1) * y_size + x];
-    //if (y > 0)          out_buf[ind] += in_buf[(y - 1) * y_size + x];
   }
 };
 
