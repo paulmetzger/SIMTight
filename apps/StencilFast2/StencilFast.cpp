@@ -10,6 +10,8 @@
 
 #define DEBUG false
 #define MOD_4XSIMTLANES(ind) (ind & 11111111)
+#define likely(expr) __builtin_expect(expr, true)
+#define unlikely(expr) __builtin_expect(expr, false)
 
 void populate_in_buf(int *in_buf, int x_size, int y_size) {
   for (int y = 0; y < y_size; ++y) {
@@ -80,20 +82,20 @@ struct SimpleStencil : Kernel {
       __syncthreads();
 
       int result = in_buf[global_ind];
-      if (x < x_size - 1) result += c[threadIdx.y][MOD_4XSIMTLANES(x + 1)];
+      if (likely(x < x_size - 1)) result += c[threadIdx.y][MOD_4XSIMTLANES(x + 1)];
       noclConverge();
 
-      if (x > 0)          result += c[threadIdx.y][MOD_4XSIMTLANES(x - 1)];
+      if (likely(x > 0))          result += c[threadIdx.y][MOD_4XSIMTLANES(x - 1)];
       noclConverge();
 
-      if (y < y_size - 1) {
-        if (threadIdx.y == blockDim.y - 1) result += in_buf[(y + 1) * y_size + x];
+      if (likely(y < y_size - 1)) {
+        if (unlikely(threadIdx.y == blockDim.y - 1)) result += in_buf[(y + 1) * y_size + x];
         else result += c[threadIdx.y + 1][MOD_4XSIMTLANES(x)]; // in_buf[(y + 1) * y_size + x];
       }
       noclConverge();
 
-      if (y > 0) {
-        if (threadIdx.y == 0) result += in_buf[(y - 1) * y_size + x];
+      if (likely(y > 0)) {
+        if (unlikely(threadIdx.y == 0)) result += in_buf[(y - 1) * y_size + x];
         else result += c[threadIdx.y - 1][MOD_4XSIMTLANES(x)]; // in_buf[(y - 1) * y_size + x];
       }
       noclConverge();
