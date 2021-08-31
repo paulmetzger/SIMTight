@@ -77,10 +77,6 @@ struct SimpleStencil : Kernel {
     auto c = shared.array<int, SIMTWarps, shared_mem_x_size>();
     c[threadIdx.y][MOD_4XSIMTLANES(x)] = in_buf[global_ind];
     for (int i = 0; i < x_size; i += SIMTLanes) {
-      // Load values into local memory. Note: This line might look loop invariant but
-      // it actually isn't. x and global_ind are incremented with each iteration (see
-      // at the end of the loop).
-      //c[threadIdx.y][MOD_4XSIMTLANES(x)] = in_buf[global_ind];
       if (likely(i + SIMTLanes < x_size)) c[threadIdx.y][MOD_4XSIMTLANES(x + SIMTLanes)] = in_buf[global_ind + SIMTLanes];
       __syncthreads();
       
