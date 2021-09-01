@@ -70,9 +70,9 @@ struct SimpleStencil : Kernel {
     const unsigned y    = blockIdx.y * blockDim.y + threadIdx.y;
     unsigned global_ind = y * x_size + x;
     
-    auto left   = shared.array<int, SIMTLanes, SIMTWarps>();
-    auto middle = shared.array<int, SIMTLanes, SIMTWarps>();
-    auto right  = shared.array<int, SIMTLanes, SIMTWarps>();
+    auto left   = shared.array<int, SIMTWarps, SIMTLanes>();
+    auto middle = shared.array<int, SIMTWarps, SIMTLanes>();
+    auto right  = shared.array<int, SIMTWarps, SIMTLanes>();
     
     // Initialise 'left' and 'middle'
     left[threadIdx.y][threadIdx.x] = 0;
@@ -121,9 +121,6 @@ struct SimpleStencil : Kernel {
 };
 
 int main() {
-  puts("Broken. Needs to be fixed.");
-  return 0;
-
   // Are we in simulation?
   bool isSim = getchar();
 
