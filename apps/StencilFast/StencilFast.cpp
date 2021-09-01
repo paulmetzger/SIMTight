@@ -62,7 +62,7 @@ struct SimpleStencil : Kernel {
     c[threadIdx.y][threadIdx.x] = in_buf[ind];
     __syncthreads();
 
-    int result = in_buf[ind];
+    int result = c[threadIdx.y][threadIdx.x];
     if (x < x_size - 1) {
       if (threadIdx.x == blockDim.x - 1) result += in_buf[ind + 1];
       else result += c[threadIdx.y][threadIdx.x + 1]; // in_buf[y * y_size + x + 1];
