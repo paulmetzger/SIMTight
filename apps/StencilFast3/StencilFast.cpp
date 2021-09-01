@@ -70,12 +70,13 @@ struct SimpleStencil : Kernel {
     const unsigned y    = blockIdx.y * blockDim.y + threadIdx.y;
     unsigned global_ind = y * x_size + x;
     
-    auto left   = shared.array<int, SIMTWarps, SIMTLanes>();
-    auto middle = shared.array<int, SIMTWarps, SIMTLanes>();
-    auto right  = shared.array<int, SIMTWarps, SIMTLanes>();
+    int (*left)[SIMTLanes]   = shared.array<int, SIMTWarps, SIMTLanes>();
+    int (*middle)[SIMTLanes] = shared.array<int, SIMTWarps, SIMTLanes>();
+    int (*right)[SIMTLanes]  = shared.array<int, SIMTWarps, SIMTLanes>();
+    int (*tmp)[SIMTLanes]; // This is used to swap pointers at the end of the loop below.
     
     // Initialise 'left' and 'middle'
-    left[threadIdx.y][threadIdx.x] = 0;
+    //left[threadIdx.y][threadIdx.x] = 0;
     middle[threadIdx.y][threadIdx.x] = in_buf[global_ind];
     //__syncthreads();
 
@@ -114,8 +115,10 @@ struct SimpleStencil : Kernel {
       x          += SIMTLanes;
       
       // Shift blocks to the left
+      tmp = left;
       left = middle;
       middle = right;
+      right = tmp;
     }
   }
 };
