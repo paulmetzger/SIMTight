@@ -58,7 +58,7 @@ struct SimpleStencil : Kernel {
     const int ind = y * x_size + x;
 
     // Load values into local memory
-    auto c = shared.array<int, SIMTLanes, SIMTWarps>();
+    auto c = shared.array<int, SIMTWarps, SIMTLanes>();
     c[threadIdx.y][threadIdx.x] = in_buf[ind];
     __syncthreads();
 
